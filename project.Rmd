@@ -39,9 +39,9 @@ output:
 
 knitr::opts_chunk$set(echo = TRUE)
 ```
-## Your name:   <!-- write your name --> {-}
+## Your name: Nicholas Treynor  <!-- write your name --> {-}
 
-## Partner's name:   <!-- write your name --> {-}
+## Partner's name: James Lemkin   <!-- write your name --> {-}
 
 ## Any other collaborator(s):   <!-- write your name --> {-}
 
@@ -65,11 +65,46 @@ knitr::opts_chunk$set(echo = TRUE)
 
 Alice and Bob decide to use the following modulation scheme to map the bits to the inter-packet delay. A delay of $0.25$ is used to encode a bit $0$ and delay of $0.75$ is used to encode a bit $1$. Write a short R code  that will generate the modified packet stream that contains the secret message.
 
+charToRaw(x) - converts characters to hexadecimal value
+rawToBits(x) - converts hexadecimal value to bit values. The bits are in reverse order per decimal value, so the letter t corresponds to 74 in hexadecimal -> 01110100 in reality, but will return as 00101110 when using the function.
+
 ## Answer {-}
+
+We want to output “this is a secret message”.
+To do so, we need to convert the message into binary, and then send along the individual bits that make up the binary using the encoding delays. 
+
+We need to loop over the generated strings carefully, stepping 16 forward then looping backwards over 8 integers.
 ```{r }
 #  your R code here
+message = "this is a secret message"
+rawMessage = charToRaw(message)
+bits = rawToBits(rawMessage)
 
+bitLength = (nchar(message) * 8)
+sentPacketsTime = numeric(bitLength + 1)
+sentPacketsStream = numeric(bitLength)
+sentPacketsDelays = numeric(bitLength)
+currTime = 0
+index = 2
+for (i in 1:nchar(message)) {
+  for (x in 0:7) {
+    if (bits[(i*8) - x] == 00){
+      sentPacketsTime[index] = currTime + 0.25
+      currTime = currTime + 0.25
+      sentPacketsStream[index-1] = 0
+      sentPacketsDelays[index-1] = 0.25
+    } else {
+      sentPacketsTime[index] = currTime + 0.75
+      currTime = currTime + 0.75
+      sentPacketsStream[index-1] = 1
+      sentPacketsDelays[index-1] = 0.75
+    }
+    index = index + 1
+  }
+}
 
+print(sentPacketsStream)
+print(sentPacketsStream)
 ```
 
 ## 
@@ -80,8 +115,20 @@ Plot the histogram of the inter-packet delays of the overt packet stream. Plot t
 
 ```{r }
 #  your R code here
+data <- read.csv("Traffic_data_orig.csv", header=TRUE)
+overtPacketStream = data[,2]
+x = length(overtPacketStream)
+overtPacketsDelays = numeric(x-1)
+currTime = 0
+index = 2
+for (i in 2:x-1){
+  overtPacketsDelays[i-1] = overtPacketStream[i]-overtPacketStream[i-1]
+}
 
+hist(overtPacketsDelays, main = "Histogram of Overt Packet Delays")
+hist(sentPacketsDelays, main = "Histogram of Covert Packet Delays")
 ```
+There is a very clear difference in the two histograms, indicating that some sort of unusual data transmission is occurring. Eve would be suspicious if she were monitoring our packet delays.
 
 <!-- text comments here -->
 
