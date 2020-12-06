@@ -1,0 +1,176 @@
+---
+title: <center> ECS 132 Fall 2020, Project</center>
+header-includes:
+- \usepackage{tikz}
+- \usepackage{amsmath}
+- \usepackage{graphicx}
+- \usepackage{fancyhdr}
+- \usepackage{geometry}
+- \usepackage{float}
+- \usepackage{xcolor}
+date: "<center> December 1, 2020 </center>"
+output:
+  html_document:
+    
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: no
+    toc_depth: 3
+    pandoc_args:
+    - --number-sections
+    - --number-offset=2
+  pdf_document:
+    toc: no
+    toc_depth: '3'
+    highlight: tango
+    number_sections: yes
+---
+
+
+\pagestyle{fancy}
+\fancyhf{}
+\rhead{Project}
+\lhead{ECS 132 Fall 2020}
+\rfoot{Page \thepage}
+
+<!-- regular html comment --> 
+```{r setup, include=FALSE}
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+## Your name:   <!-- write your name --> {-}
+
+## Partner's name:   <!-- write your name --> {-}
+
+## Any other collaborator(s):   <!-- write your name --> {-}
+
+
+# Instructions {-}
+
+1. Please refer to "ECS_132_Project.pdf" for details.
+
+2. You may in no circumstances upload your project to private tutoring websites such as CourseHero or Chegg. Remember all material related to this course  is a property of the University of California and posting them is a violation of the copyright laws. 
+    
+3. If you refer to a source (either a book or the internet), you must cite it.
+    
+4. You may work in groups of size of at most 2. If you collaborate with others,  you must list their names.
+    
+5. Write your answers in R Markdown and submit the knitted pdf on Gradescope; for due date and other details see the Homework Policy and Schedule.
+
+\setcounter{section}{2}
+# Design
+
+## 
+
+Alice and Bob decide to use the following modulation scheme to map the bits to the inter-packet delay. A delay of $0.25$ is used to encode a bit $0$ and delay of $0.75$ is used to encode a bit $1$. Write a short R code  that will generate the modified packet stream that contains the secret message.
+
+## Answer {-}
+```{r }
+#  your R code here
+
+
+```
+
+## 
+
+Plot the histogram of the inter-packet delays of the overt packet stream. Plot the histogram of the covert packet stream. Will Eve be suspicious?
+
+## Answer {-}
+
+```{r }
+#  your R code here
+
+```
+
+<!-- text comments here -->
+
+
+## 
+
+Alice and Bob decide to use the following modulation scheme. Let $m$, $min$, and $max$ denote the median, min, and max of the inter-packet delay of the overt packet stream. If Alice needs to send a $0$ she randomly generates a delay between $min$ and $m$. If she want to send a $1$ she randomly generates a delay between $m$ and $max$. First, compute $m$, $min$,  and $max$. Next, modify the code  in  Question 1, to generate  the packet stream that contains  the secret message.
+
+
+## Answer {-}
+
+```{r }
+#  your R code here
+
+```
+
+
+
+## 
+
+Plot the histogram  of the inter-packet  delays of the overt packet stream and that of the new covert packet stream. Do you think Eve will be suspicious?
+  
+## Answer {-}
+
+```{r }
+#  your R code here
+
+```
+
+<!-- text comments here -->
+
+##  
+
+Answer the following questions briefly (in 1 or 2 sentences)
+
+1. How can you improve upon the method in Question 3? 
+
+   \textbf{Answer: } <!-- enter your answer here --> 
+
+2. We assumed the Alice will buffer up the packets and we mentioned that it was unrealistic. Why?
+ 
+   \textbf{Answer: } <!-- enter your answer here -->
+
+3. We have assumed that the network does not alter the inter-packet delays. What would be the problem if it did? Can you suggest methods to mitigate the effect of the changes of the inter-packet delay (noise)?
+
+   \textbf{Answer: } <!-- enter your answer here -->
+
+
+## Answer {-}
+
+<!-- enter your answer below -->
+
+
+# Implementation
+
+
+## 
+For  buffer size $B=20$ we want to find out the probability of overflow  and  underflow, when the IPD follows the Exponential with $\lambda =1$ pkts/sec and $i=2, 6, 10, 14, 18$. Use message size $m = 16, 32$ bits. Tabulate the results. Remember that to determine the probability you need to run multiple (say 500) experiments for each parameter, i.e., for $B = 20, m = 16, i = 2$ run $500$ experiments  and determine the probability of overflow and underflow. Similarly for other values of $i$ and $m$.
+
+## Answer {-}
+
+
+```{r }
+#  your R simulation code here 
+
+
+# tabulate results and compute the probabilities
+
+```
+
+## 
+For  buffer size $B=20$ we want to find out the probability of overflow  and  underflow, when the IPD follows the Uniform distribution in the range (0,1)  and $i=2, 6, 10, 14, 18$. Use message size $m = 16, 32$ bits.  Tabulate the results. Remember that to determine the probability you need to run multiple (say 500) experiments for each parameter, i.e., for $B = 20, m = 16, i = 2$ run $500$ experiments  and determine the probability of overflow and underflow. Similarly for other values of $i$ and $m$.
+
+## Answer {-}
+
+
+```{r }
+#  your R simulation code here 
+
+
+# tabulate results and compute the probabilities
+
+```
+
+##  
+Propose methods to deal with buffer overflow and underflow.
+
+
+## Answer {-}
+
+<!-- enter your answer below -->
+
