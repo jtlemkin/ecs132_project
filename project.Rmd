@@ -142,7 +142,45 @@ Alice and Bob decide to use the following modulation scheme. Let $m$, $min$, and
 
 ```{r }
 #  your R code here
+med = median(overtPacketsDelays)
+min = min(overtPacketsDelays)
+max = max(overtPacketsDelays)
+mean = mean(overtPacketsDelays)
 
+message = "this is a secret message"
+rawMessage = charToRaw(message)
+bits = rawToBits(rawMessage)
+
+bitLength = (nchar(message) * 8)
+sentPacketsTime = numeric(bitLength + 1)
+sentPacketsStream = numeric(bitLength)
+sentPacketsDelays = numeric(bitLength)
+currTime = 0
+index = 2
+for (i in 1:nchar(message)) {
+  for (x in 0:7) {
+    if (bits[(i*8) - x] == 00){
+      delay = rexp(1, 1/mean)
+      while (delay > med || delay < min) {
+        delay = rexp(1, 1/mean)
+      }
+      sentPacketsTime[index] = currTime + delay
+      currTime = currTime + delay
+      sentPacketsStream[index-1] = 0
+      sentPacketsDelays[index-1] = delay
+    } else {
+      delay = rexp(1, 1/mean)
+      while (delay <= med || delay > max) {
+        delay = rexp(1, 1/mean)
+      }
+      sentPacketsTime[index] = currTime + delay
+      currTime = currTime + delay
+      sentPacketsStream[index-1] = 1
+      sentPacketsDelays[index-1] = delay
+    }
+    index = index + 1
+  }
+}
 ```
 
 
@@ -155,10 +193,21 @@ Plot the histogram  of the inter-packet  delays of the overt packet stream and t
 
 ```{r }
 #  your R code here
+data <- read.csv("Traffic_data_orig.csv", header=TRUE)
+overtPacketStream = data[,2]
+x = length(overtPacketStream)
+overtPacketsDelays = numeric(x-1)
+currTime = 0
+index = 2
+for (i in 2:x-1){
+  overtPacketsDelays[i-1] = overtPacketStream[i]-overtPacketStream[i-1]
+}
 
+hist(overtPacketsDelays, main = "Histogram of Overt Packet Delays")
+hist(sentPacketsDelays, main = "Histogram of Covert Packet Delays", breaks=8)
 ```
 
-<!-- text comments here -->
+Eve will most likely not be suspicious because the distributions of the overt and covert packet delays are nearly indistinguishable from one another. The overt distribution looks like an exponetial distribution so we sampled an exponential distribution with the same rate parameter as the overt distrubtion and bounded it in order to generate our delays.
 
 ##  
 
@@ -166,21 +215,16 @@ Answer the following questions briefly (in 1 or 2 sentences)
 
 1. How can you improve upon the method in Question 3? 
 
-   \textbf{Answer: } <!-- enter your answer here --> 
+   \textbf{Answer: } If we had access to more data we could potentially compute an even more precise rate parameter. Potentially another way we could approach this problem is by taking samples from the overt distribution and added some noise to it. With this approach we wouldn't need to make assumptions about the underlying distribution.
 
 2. We assumed the Alice will buffer up the packets and we mentioned that it was unrealistic. Why?
  
-   \textbf{Answer: } <!-- enter your answer here -->
+   \textbf{Answer: } In the case where we're using Skype and transmitting data altering the delays of packets as such before sending them out would prevent the call from behaving normally as it is ongoing. As a result, it could then be seen as suspicious. 
 
 3. We have assumed that the network does not alter the inter-packet delays. What would be the problem if it did? Can you suggest methods to mitigate the effect of the changes of the inter-packet delay (noise)?
 
-   \textbf{Answer: } <!-- enter your answer here -->
-
-
-## Answer {-}
-
-<!-- enter your answer below -->
-
+   \textbf{Answer: } The problem could be that the timing delays could flip a 0 bit to a 1. There are multiple methods that we could use such as using a parity bit, resending the message multiple times, or increasing the odds of a correct transmission by moving the min and max thresholds for emitting a 0 or 1 away from the median. 
+  
 
 # Implementation
 
@@ -193,7 +237,96 @@ For  buffer size $B=20$ we want to find out the probability of overflow  and  un
 
 ```{r }
 #  your R simulation code here 
-
+ms = c(16, 32)
+t = 500
+B = 20
+is = c(2, 6, 10, 14, 18)
+for (m in ms) {
+  for (i in is) {
+    overflows = numeric(t)
+    underflows = numeric(t)
+    for (x in 1:t) {
+      message = sample(c(0, 1), size = m, replace = TRUE)
+      CB = i
+      
+      packet_gen_delays = rexp(m, rate = 1)
+      packet_send_delays = numeric(m)
+      for (bit_i in 1:length(message)) {
+        if (message[bit_i] == 0) {
+          delay = rexp(1, 1)
+          #while (delay > med || delay < min) {
+          while (delay > 1 || delay < 0) {
+            #print(delay)
+            delay = rexp(1, 1)
+          }
+          packet_send_delays[bit_i] = delay
+        } else {
+          delay = rexp(1, 1/mean)
+          #while (delay <= med || delay > max) {
+          while (delay <= 1) {
+            #print(delay)
+            delay = rexp(1, 1)
+          }
+          packet_send_delays[bit_i] = delay
+        }
+      }
+      
+      gen_i = i + 1
+      t_next_gen = packet_gen_delays[gen_i]
+      send_i = 1
+      t_next_send = packet_send_delays[send_i]
+      
+      outcome = "success"
+            
+      while (gen_i < m) {
+        if (t_next_gen < t_next_send) {
+          # If  a packet will be added to the buffer before the next packet is sent
+          t_next_send = t_next_send - t_next_gen
+          
+          gen_i = gen_i + 1
+          t_next_gen = packet_gen_delays[gen_i]
+          CB = CB + 1
+          
+          if (CB > B) {
+            outcome = "overflow"
+            break
+          }
+        } else if (t_next_send < t_next_gen) {
+          # If we send the next packet before we generate the next packet
+          t_next_gen = t_next_gen - t_next_send
+          
+          send_i = send_i + 1
+          t_next_send = packet_send_delays[send_i]
+          CB = CB - 1
+          
+          if (CB < 0) {
+            outcome = "underflow"
+            break
+          }
+        } else {
+          # If we send a packet as we generate it
+          gen_i = gen_i + 1
+          t_next_gen = packet_gen_delays[gen_i]
+          send_i = send_i + 1
+          t_next_send = packet_send_delays[send_i]
+        }
+      }
+      
+      if (outcome == "overflow") {
+        overflows[x] = 1
+        underflows[x] = 0
+      } else if (outcome == "underflow") {
+        overflows[x] = 0
+        underflows[x] = 1
+      } else {
+        overflows[x] = 0
+        underflows[x] = 0
+      }
+    }
+    print(paste("overflow: ", mean(overflows)))
+    print(paste("underflow: ", mean(underflows)))
+  }
+}
 
 # tabulate results and compute the probabilities
 
