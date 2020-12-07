@@ -208,7 +208,7 @@ hist(overtPacketsDelays, main = "Histogram of Overt Packet Delays", breaks = 8)
 hist(sentPacketsDelays, main = "Histogram of Covert Packet Delays", breaks = 8)
 ```
 
-Eve will most likely not be suspicious because the distributions of the overt and covert packet delays are nearly indistinguishable from one another. The overt distribution looks like an exponetial distribution so we sampled an exponential distribution with the same rate parameter as the overt distrubtion and bounded it in order to generate our delays.
+Eve will most likely not be suspicious because the distributions of the overt and covert packet delays are nearly indistinguishable from one another. The overt distribution looks like an exponential distribution so we sampled an exponential distribution with the same rate parameter as the overt distribution and bounded it in order to generate our delays.
 
 ##  
 
@@ -216,15 +216,15 @@ Answer the following questions briefly (in 1 or 2 sentences)
 
 1. How can you improve upon the method in Question 3? 
 
-   \textbf{Answer: } If we had access to more data we could potentially compute an even more precise rate parameter. Potentially another way we could approach this problem is by taking samples from the overt distribution and added some noise to it. With this approach we wouldn't need to make assumptions about the underlying distribution.
+   \textbf{Answer: } If we had access to more data we could potentially compute an even more precise rate parameter. Potentially another way we could approach this problem is by taking samples from the overt distribution and adding some noise to it. With this approach we wouldn't need to make assumptions about the underlying distribution.
 
 2. We assumed the Alice will buffer up the packets and we mentioned that it was unrealistic. Why?
  
-   \textbf{Answer: } In the case where we're using Skype and transmitting data altering the delays of packets as such before sending them out would prevent the call from behaving normally as it is ongoing. As a result, it could then be seen as suspicious. 
+   \textbf{Answer: } In the case where we're using Skype and transmitting data, altering the delays of packets by buffering up a large number of them before sending them out would prevent the call from behaving normally -- it may cause problems with the application or rouse suspicion if someone is watching. As a result, it could be problematic. 
 
 3. We have assumed that the network does not alter the inter-packet delays. What would be the problem if it did? Can you suggest methods to mitigate the effect of the changes of the inter-packet delay (noise)?
 
-   \textbf{Answer: } The problem could be that the timing delays could flip a 0 bit to a 1. There are multiple methods that we could use such as using a parity bit, resending the message multiple times, or increasing the odds of a correct transmission by moving the min and max thresholds for emitting a 0 or 1 away from the median. 
+   \textbf{Answer: } The problem could be that the timing delays could flip a 0 bit to a 1. There are multiple methods that we could use such as using a parity bit, re-sending the message multiple times, or increasing the odds of a correct transmission by moving the min and max thresholds for emitting a 0 or 1 away from the median. 
   
 
 # Implementation
@@ -331,10 +331,10 @@ for (m in ms) {
       }
     }
     
-    #print(paste("overflow: ", mean(overflows)))
-    #print(paste("underflow: ", mean(underflows)))
+    
+   
     z = mean(underflows) + mean(overflows)
-    #print(paste("Success: ", 1 - z))
+    
     OverflowProbability[index] = mean(overflows)
     UnderflowProbability[index] = mean(underflows)
     SuccessProbability[index] = 1 - z
@@ -443,10 +443,10 @@ for (m in ms) {
       }
     }
     
-    #print(paste("overflow: ", mean(overflows)))
-    #print(paste("underflow: ", mean(underflows)))
+    
+    
     z = mean(underflows) + mean(overflows)
-    #print(paste("Success: ", 1 - z))
+    
     OverflowProbability[index] = mean(overflows)
     UnderflowProbability[index] = mean(underflows)
     SuccessProbability[index] = 1 - z
