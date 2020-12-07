@@ -10,6 +10,11 @@ header-includes:
 - \usepackage{xcolor}
 date: "<center> December 1, 2020 </center>"
 output:
+  pdf_document:
+    toc: no
+    toc_depth: '3'
+    highlight: tango
+    number_sections: yes
   html_document:
     
     highlight: tango
@@ -20,11 +25,6 @@ output:
     pandoc_args:
     - --number-sections
     - --number-offset=2
-  pdf_document:
-    toc: no
-    toc_depth: '3'
-    highlight: tango
-    number_sections: yes
 ---
 
 
@@ -104,7 +104,8 @@ for (i in 1:nchar(message)) {
 }
 
 print(sentPacketsStream)
-print(sentPacketsStream)
+print(sentPacketsDelays)
+print(sentPacketsTime)
 ```
 
 ## 
@@ -203,8 +204,8 @@ for (i in 2:x-1){
   overtPacketsDelays[i-1] = overtPacketStream[i]-overtPacketStream[i-1]
 }
 
-hist(overtPacketsDelays, main = "Histogram of Overt Packet Delays")
-hist(sentPacketsDelays, main = "Histogram of Covert Packet Delays", breaks=8)
+hist(overtPacketsDelays, main = "Histogram of Overt Packet Delays", breaks = 8)
+hist(sentPacketsDelays, main = "Histogram of Covert Packet Delays", breaks = 8)
 ```
 
 Eve will most likely not be suspicious because the distributions of the overt and covert packet delays are nearly indistinguishable from one another. The overt distribution looks like an exponetial distribution so we sampled an exponential distribution with the same rate parameter as the overt distrubtion and bounded it in order to generate our delays.
@@ -237,17 +238,23 @@ For  buffer size $B=20$ we want to find out the probability of overflow  and  un
 
 ```{r }
 #  your R simulation code here 
+
 ms = c(16, 32)
 t = 500
 B = 20
-is = c(2, 6, 10, 14, 18)
+i = c(2, 6, 10, 14, 18)
 for (m in ms) {
-  for (i in is) {
+  OverflowProbability = numeric(5)
+  UnderflowProbability = numeric(5)
+  SuccessProbability = numeric(5)
+  index = 0
+  for (is in i) {
+    index = index + 1
     overflows = numeric(t)
     underflows = numeric(t)
     for (x in 1:t) {
       message = sample(c(0, 1), size = m, replace = TRUE)
-      CB = i
+      CB = is
       
       packet_gen_delays = rexp(m, rate = 1)
       packet_send_delays = numeric(m)
@@ -261,7 +268,7 @@ for (m in ms) {
           }
           packet_send_delays[bit_i] = delay
         } else {
-          delay = rexp(1, 1/mean)
+          delay = rexp(1, 1)
           #while (delay <= med || delay > max) {
           while (delay <= 1) {
             #print(delay)
@@ -271,7 +278,7 @@ for (m in ms) {
         }
       }
       
-      gen_i = i + 1
+      gen_i = is + 1
       t_next_gen = packet_gen_delays[gen_i]
       send_i = 1
       t_next_send = packet_send_delays[send_i]
@@ -323,10 +330,23 @@ for (m in ms) {
         underflows[x] = 0
       }
     }
-    print(paste("overflow: ", mean(overflows)))
-    print(paste("underflow: ", mean(underflows)))
+    
+    #print(paste("overflow: ", mean(overflows)))
+    #print(paste("underflow: ", mean(underflows)))
+    z = mean(underflows) + mean(overflows)
+    #print(paste("Success: ", 1 - z))
+    OverflowProbability[index] = mean(overflows)
+    UnderflowProbability[index] = mean(underflows)
+    SuccessProbability[index] = 1 - z
   }
+  
+  print(paste("Exponential Distribution"))
+  print(paste("Message Size: ", m))
+  df = data.frame(i, OverflowProbability, UnderflowProbability, SuccessProbability)
+  print(df)
+  table(df)
 }
+
 
 # tabulate results and compute the probabilities
 
@@ -341,7 +361,102 @@ For  buffer size $B=20$ we want to find out the probability of overflow  and  un
 ```{r }
 #  your R simulation code here 
 
-
+ms = c(16, 32)
+t = 500
+B = 20
+i = c(2, 6, 10, 14, 18)
+for (m in ms) {
+  OverflowProbability = numeric(5)
+  UnderflowProbability = numeric(5)
+  SuccessProbability = numeric(5)
+  index = 0
+  for (is in i) {
+    index = index + 1
+    overflows = numeric(t)
+    underflows = numeric(t)
+    for (x in 1:t) {
+      message = sample(c(0, 1), size = m, replace = TRUE)
+      CB = is
+      
+      packet_gen_delays = runif(m, 0, 1)
+      packet_send_delays = numeric(m)
+      for (bit_i in 1:length(message)) {
+        if (message[bit_i] == 0) {
+          delay = runif(1, 0, 0.5)
+          packet_send_delays[bit_i] = delay
+        } else {
+          delay = runif(1, 0.5, 1)
+          packet_send_delays[bit_i] = delay
+        }
+      }
+      
+      gen_i = is + 1
+      t_next_gen = packet_gen_delays[gen_i]
+      send_i = 1
+      t_next_send = packet_send_delays[send_i]
+      
+      outcome = "success"
+            
+      while (gen_i < m) {
+        if (t_next_gen < t_next_send) {
+          # If  a packet will be added to the buffer before the next packet is sent
+          t_next_send = t_next_send - t_next_gen
+          
+          gen_i = gen_i + 1
+          t_next_gen = packet_gen_delays[gen_i]
+          CB = CB + 1
+          
+          if (CB > B) {
+            outcome = "overflow"
+            break
+          }
+        } else if (t_next_send < t_next_gen) {
+          # If we send the next packet before we generate the next packet
+          t_next_gen = t_next_gen - t_next_send
+          
+          send_i = send_i + 1
+          t_next_send = packet_send_delays[send_i]
+          CB = CB - 1
+          
+          if (CB < 0) {
+            outcome = "underflow"
+            break
+          }
+        } else {
+          # If we send a packet as we generate it
+          gen_i = gen_i + 1
+          t_next_gen = packet_gen_delays[gen_i]
+          send_i = send_i + 1
+          t_next_send = packet_send_delays[send_i]
+        }
+      }
+      
+      if (outcome == "overflow") {
+        overflows[x] = 1
+        underflows[x] = 0
+      } else if (outcome == "underflow") {
+        overflows[x] = 0
+        underflows[x] = 1
+      } else {
+        overflows[x] = 0
+        underflows[x] = 0
+      }
+    }
+    
+    #print(paste("overflow: ", mean(overflows)))
+    #print(paste("underflow: ", mean(underflows)))
+    z = mean(underflows) + mean(overflows)
+    #print(paste("Success: ", 1 - z))
+    OverflowProbability[index] = mean(overflows)
+    UnderflowProbability[index] = mean(underflows)
+    SuccessProbability[index] = 1 - z
+  }
+  print(paste("Uniform Distribution"))
+  print(paste("Message Size: ", m))
+  df = data.frame(i, OverflowProbability, UnderflowProbability, SuccessProbability)
+  print(df)
+  table(df)
+}
 # tabulate results and compute the probabilities
 
 ```
@@ -354,3 +469,8 @@ Propose methods to deal with buffer overflow and underflow.
 
 <!-- enter your answer below -->
 
+Sending shorter messages, using larger buffers, ensuring that the buffer is half filled with packets when transmission begins, and ensuring that packet delays are generated using the appropriate distribution all ensure that buffer overflow and underflow has a low probability of occurring.
+
+In the event that a buffer overflow or underflow occurs, we believe the best way to handle it would be to send a message to the receiver that a buffer overflow or underflow has occurred. This could be done by spiking the delay of a packet to be longer than usual. If using a uniform distribution, you could set the packet delay to be longer than the maximum normal delay, indicating that the previous packet needs to be resent. If overflow occurs, a similar spiked message could be sent, and then the receiver could know to ignore the next 5 packet delays, as the sender clears out some of the packets from the overflowed buffer at a slightly higher than normal rate. To use this method with an exponential distribution, the sender and receiver would need to place a cap on the length of delays generated by the sender, with the understanding that any delay longer than the agreed upon max indicates a problem.
+
+Both of these methods do contain a slight risk of anomalous behavior being detected by a savvy Eve, however. A better method perhaps would be to transmit the same message multiple times, in the hopes that at least one such message would arrive intact.
