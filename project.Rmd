@@ -182,6 +182,10 @@ for (i in 1:nchar(message)) {
     index = index + 1
   }
 }
+
+print(sentPacketsStream)
+print(sentPacketsDelays)
+print(sentPacketsTime)
 ```
 
 
@@ -224,7 +228,7 @@ Answer the following questions briefly (in 1 or 2 sentences)
 
 3. We have assumed that the network does not alter the inter-packet delays. What would be the problem if it did? Can you suggest methods to mitigate the effect of the changes of the inter-packet delay (noise)?
 
-   \textbf{Answer: } The problem could be that the timing delays could flip a 0 bit to a 1. There are multiple methods that we could use such as using a parity bit, re-sending the message multiple times, or increasing the odds of a correct transmission by moving the min and max thresholds for emitting a 0 or 1 away from the median. 
+   \textbf{Answer: } The problem could be that the timing delays could flip a 0 bit to a 1. There are multiple methods that we could use such as using a parity bit, re-sending the message multiple times, or increasing the odds of a correct transmission by moving the max thresholds for emitting a 0 and the minimum threshold for emitting a 1 away from the median to reduce the chance noise flips a bit. To evade suspicion, we would need to be careful with how much we adjust the min and max however, lest our distribution appear bimodal. 
   
 
 # Implementation
@@ -238,7 +242,6 @@ For  buffer size $B=20$ we want to find out the probability of overflow  and  un
 
 ```{r }
 #  your R simulation code here 
-
 ms = c(16, 32)
 t = 500
 B = 20
@@ -262,7 +265,7 @@ for (m in ms) {
         if (message[bit_i] == 0) {
           delay = rexp(1, 1)
           #while (delay > med || delay < min) {
-          while (delay > 1 || delay < 0) {
+          while (delay > qexp(0.5, 1) || delay < 0) {
             #print(delay)
             delay = rexp(1, 1)
           }
@@ -270,7 +273,7 @@ for (m in ms) {
         } else {
           delay = rexp(1, 1)
           #while (delay <= med || delay > max) {
-          while (delay <= 1) {
+          while (delay <= qexp(0.5, 1)) {
             #print(delay)
             delay = rexp(1, 1)
           }
